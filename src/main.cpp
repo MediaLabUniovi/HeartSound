@@ -18,7 +18,7 @@ volatile bool cambio = false;
 
 // Variables de control
 bool isPlaying = false;
-const unsigned long debounceDelay = 50;   // 50 ms idealmente
+const unsigned long debounceDelay = 100;   // 50 ms idealmente
 unsigned long lastChangeTime = 0;
 
 // Rutinas de interrupción
@@ -33,18 +33,6 @@ void IRAM_ATTR boton2_ISR() {
 void IRAM_ATTR boton3_ISR() {
   var = 3;
   cambio = true;
-}
-
-void reproducirAudio(int carpeta, int audio){
-  if (carpeta < 1 || carpeta > 99 || audio < 1 || audio > 255) {
-    Serial.println("Error: carpeta o audio fuera de rango.");
-    return;
-  }
-  myDFPlayer.playFolder(carpeta, audio); // Reproduce audio.mp3 en carpeta/
-  Serial.print("Reproduciendo carpeta ");
-  Serial.print(carpeta);
-  Serial.print(", audio ");
-  Serial.println(audio);
 }
 
 void setup() {
@@ -72,7 +60,7 @@ void setup() {
   if (!myDFPlayer.begin(SerialDFP)) {
     Serial.println("No se pudo comunicar con DFPlayer.");
     Serial.println("Verifica cableado, SD y alimentación.");
-    while (true) delay(1000);
+    while (true);
     return;
   }
   Serial.println("DFPlayer iniciado correctamente.");
@@ -82,43 +70,34 @@ void setup() {
 }
 
 void loop() {
-  if (cambio) {
-    cambio = false;
-    
-    // Debounce: ignoramos interrupciones muy seguidas
-    if (millis() - lastChangeTime < debounceDelay) return;
-    lastChangeTime = millis();
-
-    
-
-    int pin = 0;
-    switch (var) {
-      case 1: pin = pinBoton1; break;
-      case 2: pin = pinBoton2; break;
-      case 3: pin = pinBoton3; break;
-      default: return;
-    }
-
-    bool pressed = digitalRead(pin) == LOW;
-
-    Serial.print("Variable: ");
-    Serial.println(var);
-    Serial.print("Estado: ");
-    Serial.println(pressed);
-    Serial.print("IsPlaying: ");
-    Serial.println(isPlaying);
-    Serial.println("");
-
-    if (pressed && !isPlaying) {
-      // Pasamos de HIGH→LOW y no estaba sonando: arrancamos
-      reproducirAudio(1, var);
-      isPlaying = true;
-    }
-    else if (!pressed && isPlaying) {
-      // Se soltó el botón y estaba sonando: paramos
-      myDFPlayer.stop();
-      isPlaying = false;
-      Serial.println("Pausando");
-    }
+  if (!cambio) return;
+  cambio = false;
+  
+  // Debounce: ignoramos interrupciones muy seguidas
+  if (millis() - lastChangeTime < debounceDelay) return;
+  lastChangeTime = millis();
+  int pin = (var==1 ? pinBoton1 : var==2 ? pinBoton2 : pinBoton3);
+  bool pressed = (digitalRead(pin) == LOW); // 1 si está a LOW
+  
+  Serial.print("Variable: ");
+  Serial.println(var);
+  Serial.print("Estado: ");
+  Serial.println(pressed);
+  Serial.print("IsPlaying: ");
+  Serial.println(isPlaying);
+  Serial.println("");
+  //delay(100);
+  
+  if (pressed && !isPlaying) {
+    // Pasamos de HIGH→LOW y no estaba sonando: arrancamos
+    myDFPlayer.playFolder(1,var);
+    Serial.printf("Bucle carpeta %d, audio %d", 1, var);
+    isPlaying = true;
+  }
+  else if (!pressed && isPlaying) {
+    // Se soltó el botón y estaba sonando: paramos
+    myDFPlayer.stop();
+    isPlaying = false;
+    Serial.println("Pausando");
   }
 }
