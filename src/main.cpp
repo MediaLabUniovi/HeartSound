@@ -18,7 +18,7 @@ volatile bool cambio = false;
 
 // Variables de control
 bool isPlaying = false;
-const unsigned long debounceDelay = 500;   // 50 ms idealmente
+const unsigned long debounceDelay = 50;   // 50 ms idealmente
 unsigned long lastChangeTime = 0;
 
 // Rutinas de interrupción
@@ -57,9 +57,9 @@ void setup() {
   pinMode(pinBoton2, INPUT_PULLUP);
   pinMode(pinBoton3, INPUT_PULLUP);
   // Asignar interrupciones
-  attachInterrupt(digitalPinToInterrupt(pinBoton1), boton1_ISR, FALLING);
-  attachInterrupt(digitalPinToInterrupt(pinBoton2), boton2_ISR, FALLING);
-  attachInterrupt(digitalPinToInterrupt(pinBoton3), boton3_ISR, FALLING);
+  attachInterrupt(digitalPinToInterrupt(pinBoton1), boton1_ISR, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(pinBoton2), boton2_ISR, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(pinBoton3), boton3_ISR, CHANGE);
   Serial.println("Interrupciones configuradas.");
 
   /* 
@@ -103,8 +103,11 @@ void loop() {
 
     Serial.print("Variable: ");
     Serial.println(var);
-    Serial.print("Variable: ");
-    Serial.println(var);
+    Serial.print("Estado: ");
+    Serial.println(pressed);
+    Serial.print("IsPlaying: ");
+    Serial.println(isPlaying);
+    Serial.println("");
 
     if (pressed && !isPlaying) {
       // Pasamos de HIGH→LOW y no estaba sonando: arrancamos
