@@ -13,6 +13,7 @@ const int pinBoton2 = 18;
 const int pinBoton3 = 19;
 
 // Variables de interrupción
+int carpeta = 0;
 volatile int var = 0;
 volatile bool cambio = false;
 
@@ -34,6 +35,8 @@ void IRAM_ATTR boton3_ISR() {
   var = 3;
   cambio = true;
 }
+
+void reproducirAudio(int folder, int audio);
 
 void setup() {
   Serial.begin(115200);
@@ -70,34 +73,34 @@ void setup() {
 }
 
 void loop() {
-  if (!cambio) return;
-  cambio = false;
-  
-  // Debounce: ignoramos interrupciones muy seguidas
-  if (millis() - lastChangeTime < debounceDelay) return;
-  lastChangeTime = millis();
-  int pin = (var==1 ? pinBoton1 : var==2 ? pinBoton2 : pinBoton3);
-  bool pressed = (digitalRead(pin) == LOW); // 1 si está a LOW
-  
-  Serial.print("Variable: ");
-  Serial.println(var);
-  Serial.print("Estado: ");
-  Serial.println(pressed);
-  Serial.print("IsPlaying: ");
-  Serial.println(isPlaying);
-  Serial.println("");
-  //delay(100);
-  
-  if (pressed && !isPlaying) {
-    // Pasamos de HIGH→LOW y no estaba sonando: arrancamos
-    myDFPlayer.playFolder(1,var);
-    Serial.printf("Bucle carpeta %d, audio %d", 1, var);
-    isPlaying = true;
+  reproducirAudio(carpeta, var);
+}
+
+void reproducirAudio(int folder, int audio){
+  if (cambio) {
+    cambio = false;
+    // Debounce: ignoramos interrupciones muy seguidas
+    if (millis() - lastChangeTime < debounceDelay) return;
+    lastChangeTime = millis();
+    int pin = (var==1 ? pinBoton1 : var==2 ? pinBoton2 : pinBoton3);
+    bool pressed = (digitalRead(pin) == LOW); // 1 si está a LOW
+    
+    if (pressed && !isPlaying) {
+      // Pasamos de HIGH→LOW y no estaba sonando: arrancamos
+      myDFPlayer.playFolder(carpeta,var);
+      Serial.printf("Bucle carpeta %d, audio %d\n", 1, var);
+      isPlaying = true;
+    }
+    else if (!pressed && isPlaying) {
+      // Se soltó el botón y estaba sonando: paramos
+      myDFPlayer.stop();
+      isPlaying = false;
+      Serial.println("Pausando");
+    }
   }
-  else if (!pressed && isPlaying) {
-    // Se soltó el botón y estaba sonando: paramos
-    myDFPlayer.stop();
-    isPlaying = false;
-    Serial.println("Pausando");
+  if (isPlaying){ // El 11 es el fin de canción, cuando llega se vuelve a poner si está el botón pulsado
+    if (myDFPlayer.available() && myDFPlayer.readType() == 11) {
+    myDFPlayer.playFolder(carpeta,var);
+    }
   }
 }
