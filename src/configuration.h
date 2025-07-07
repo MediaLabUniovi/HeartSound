@@ -2,27 +2,32 @@
 #define CONFIGURATION_H
 
 /* PINOUT */
+// --- Definición de pines ---
 
-// Pin de lectura del potenciómetro
-#define sensorPin           35
+// LEDs
+#define LED1 22
+#define LED2 23
+#define LED3 24
+#define LED4 25
+#define LED5 26
+#define LED6 27
 
-// Control de altavoces
-#define controlLeds0        25
-#define controlLeds1        26
-#define controlLeds2        27
+// Pulsadores con interrupciones
+#define PULSADOR1 2
+#define PULSADOR2 3
+#define PULSADOR3 18
+#define PULSADOR4 19
+#define PULSADOR5 20
 
-// Pines de los botones (Estos botones son los que activan al pulsar el altavoz)
-#define pinBoton1           4
-#define pinBoton2           5
-#define pinBoton3           18
-#define pinBoton4           19
-#define pinBoton5           21
+// Relés
+#define RELE1 28
+#define RELE2 29
+#define RELE3 30
+#define RELE4 31
+#define RELE5 32
 
-// Control de altavoces
-#define controlAltavoz0     32
-#define controlAltavoz1     33
-#define controlAltavoz2     22
-#define enaAltavoz          23
+// Potenciómetro
+#define POT A0
 
 // pines UART (SD)
 #define TX                  16
@@ -32,5 +37,9 @@
 #define RESOLUCION          1024
 #define NIVELES             6
 #define N_ALTAVOCES         5
+
+const int leds[NIVELES] = {LED1, LED2, LED3, LED4, LED5, LED6};
+const int reles[N_ALTAVOCES] = {RELE1, RELE2, RELE3, RELE4, RELE5};
+
 
 #endif

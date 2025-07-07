@@ -3,8 +3,6 @@
 #include "configuration.h"
 
 
-// Creamos un objeto Serial1 con pines asignados manualmente
-HardwareSerial SerialDFP(2);  // UART1
 DFRobotDFPlayerMini myDFPlayer;
 
 /* VARIABLES */
@@ -16,14 +14,8 @@ volatile int var = 0; // Lado del cuerpo 1-5
 volatile bool cambio = false;
 
 // Variables de control
-// int carpeta = 0; // Corazón que está sonando 1-6
-bool isPlaying = false;
-// const unsigned long debounceDelay = 200;   // 50 ms idealmente
-// unsigned long lastChangeTime = 0;
+bool isPlaying = false, ini = false;
 unsigned long currentMillis = millis();
-// const unsigned long interval = 1000;  // intervalo en milisegundos (aquí 1 s)
-// unsigned long previousMillis = 0;     // almacena la última vez que se ejecutó la acción
-
 
 volatile unsigned long lastInterruptTime1 = 0;
 volatile unsigned long lastInterruptTime2 = 0;
@@ -31,10 +23,10 @@ volatile unsigned long lastInterruptTime3 = 0;
 volatile unsigned long lastInterruptTime4 = 0;
 volatile unsigned long lastInterruptTime5 = 0;
 
-const unsigned long debounceDelay = 50; // 50 ms debounce
+const unsigned long debounceDelay = 100; // 50 ms debounce
 
 //Rutinas de atención a la interrupción
-void IRAM_ATTR boton1_ISR() {
+void isrPulsador1() {
   unsigned long interruptTime = millis();
   if (interruptTime - lastInterruptTime1 > debounceDelay) {
     var = 1;
@@ -43,7 +35,7 @@ void IRAM_ATTR boton1_ISR() {
   }
 }
 
-void IRAM_ATTR boton2_ISR() {
+void isrPulsador2() {
   unsigned long interruptTime = millis();
   if (interruptTime - lastInterruptTime2 > debounceDelay) {
     var = 2;
@@ -52,25 +44,25 @@ void IRAM_ATTR boton2_ISR() {
   }
 }
 
-void IRAM_ATTR boton3_ISR() {
+void isrPulsador3() {
   unsigned long interruptTime = millis();
-  if (interruptTime - lastInterruptTime3 > debounceDelay) {
+  if (interruptTime - lastInterruptTime3 > debounceDelay and ini == true) {
     var = 3;
     cambio = true;
     lastInterruptTime3 = interruptTime;
   }
 }
 
-void IRAM_ATTR boton4_ISR() {
+void isrPulsador4() {
   unsigned long interruptTime = millis();
-  if (interruptTime - lastInterruptTime4 > debounceDelay) {
+  if (interruptTime - lastInterruptTime4 > debounceDelay and ini == true) {
     var = 4;
     cambio = true;
     lastInterruptTime4 = interruptTime;
   }
 }
 
-void IRAM_ATTR boton5_ISR() {
+void isrPulsador5() {
   unsigned long interruptTime = millis();
   if (interruptTime - lastInterruptTime5 > debounceDelay) {
     var = 5;
@@ -82,82 +74,70 @@ void IRAM_ATTR boton5_ISR() {
 //Funciones
 void reproducirAudio(int folder, int audio);
 int getLevel(int sensorValue);
-void actualizarPines(int valor);
+void actualizarLeds(int valor);
 void controlAltavoz(int valor);
+void apagarAltavoces(void);
 
 void setup() {
   delay(200);
   Serial.begin(115200);
+  Serial2.begin(9600);     // Comunicación con el  MP3 (en TX2/RX2)
+  // Iniciar UART2 en pines 17 (RX) y 16 (TX) a 9600 baudios
 
-  // configuración ADC
-  analogReadResolution(10);         // 10 bits (0-1023)
-  analogSetAttenuation(ADC_11db);   // Rango 0-3.3V
-
-  /*
-    * Configuración de botones
-  */
-  // Configurar pines como entradas con pull-up interno
-  pinMode(pinBoton1, INPUT_PULLUP);
-  pinMode(pinBoton2, INPUT_PULLUP);
-  pinMode(pinBoton3, INPUT_PULLUP);
-  pinMode(pinBoton4, INPUT_PULLUP);
-  pinMode(pinBoton5, INPUT_PULLUP);
-  // Asignar interrupciones
-  attachInterrupt(digitalPinToInterrupt(pinBoton1), boton1_ISR, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(pinBoton2), boton2_ISR, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(pinBoton3), boton3_ISR, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(pinBoton4), boton4_ISR, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(pinBoton5), boton5_ISR, CHANGE);
-
-  /*
-    * Configuración Altavoz
-  */
-  pinMode(controlAltavoz0, OUTPUT); 
-  pinMode(controlAltavoz1, OUTPUT); 
-  pinMode(controlAltavoz2, OUTPUT); 
-  pinMode(enaAltavoz, OUTPUT);
-  digitalWrite(enaAltavoz, HIGH);
-  digitalWrite(controlAltavoz0, LOW);
-  digitalWrite(controlAltavoz1, LOW);
-  digitalWrite(controlAltavoz2, LOW);
-
-  /*
-    * Pines LEDs
-  */
-  pinMode(controlLeds0, OUTPUT); 
-  pinMode(controlLeds1, OUTPUT); 
-  pinMode(controlLeds2, OUTPUT); 
-
-  digitalWrite(controlLeds0, LOW);
-  digitalWrite(controlLeds1, LOW);
-  digitalWrite(controlLeds2, LOW);
-  
-
-  /* 
-    * Configuración del Reproductor mp3
-  */
-  // Iniciar UART1 en pines 16 (RX) y 25 (TX) a 9600 baudios
-  SerialDFP.begin(9600, SERIAL_8N1, RX, TX);
-  delay(1000);
   Serial.println("Iniciando DFPlayer...");
-  if (!myDFPlayer.begin(SerialDFP)) {
-    Serial.println("No se pudo comunicar con DFPlayer.");
-    Serial.println("Verifica cableado, SD y alimentación.");
+  if (!myDFPlayer.begin(Serial2)) {
+    Serial.println("No se encontró el DFPlayer Mini.");
     while (true);
-    return;
   }
+
   Serial.println("DFPlayer iniciado correctamente.");
   myDFPlayer.volume(30);  // Volumen (0-30)
   myDFPlayer.EQ(DFPLAYER_EQ_NORMAL);
   myDFPlayer.outputDevice(DFPLAYER_DEVICE_SD);  // Fuente: tarjeta SD
+ 
+  // Configurar LEDs como salidas
+  pinMode(LED1, OUTPUT);
+  pinMode(LED2, OUTPUT);
+  pinMode(LED3, OUTPUT);
+  pinMode(LED4, OUTPUT);
+  pinMode(LED5, OUTPUT);
+  pinMode(LED6, OUTPUT);
+
+  delay(500);
+
+  // Configurar relés como salidas
+  pinMode(RELE1, OUTPUT);
+  pinMode(RELE2, OUTPUT);
+  pinMode(RELE3, OUTPUT);
+  pinMode(RELE4, OUTPUT);
+  pinMode(RELE5, OUTPUT);
+
+  apagarAltavoces();
+
+  // Configurar pulsadores como entrada con pull-up
+  pinMode(PULSADOR1, INPUT_PULLUP);
+  pinMode(PULSADOR2, INPUT_PULLUP);
+  pinMode(PULSADOR3, INPUT_PULLUP);
+  pinMode(PULSADOR4, INPUT_PULLUP);
+  pinMode(PULSADOR5, INPUT_PULLUP);
+
+  // Configurar interrupciones por flanco de bajada
+  attachInterrupt(digitalPinToInterrupt(PULSADOR1), isrPulsador1, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(PULSADOR2), isrPulsador2, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(PULSADOR3), isrPulsador3, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(PULSADOR4), isrPulsador4, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(PULSADOR5), isrPulsador5, CHANGE);
+
+  delay(500);
+  ini = true;
+
 }
 
 void loop() {
   if(!isPlaying){
-    sensorValue = analogRead(sensorPin);
-    nivel = getLevel(sensorValue);
-    actualizarPines(nivel);
-    delay(1000);
+    nivel = getLevel(analogRead(POT));
+    actualizarLeds(nivel);
+    delay(100);
   }  
   reproducirAudio(nivel, var);
 }
@@ -169,13 +149,13 @@ void reproducirAudio(int folder, int audio){
   if (cambio) {
     cambio = false;
 
-    int pin = (audio==1 ? pinBoton1 : audio==2 ? pinBoton2: audio==3 ? pinBoton3: audio==4 ? pinBoton4 : pinBoton5);
+    int pin = (audio==1 ? PULSADOR1 : audio==2 ? PULSADOR2: audio==3 ? PULSADOR3: audio==4 ? PULSADOR4 : PULSADOR5);
 
     //mensajes debug
-    // Serial.print("Salud corazón: ");
-    // Serial.println(folder);
-    // Serial.print("Sonido: ");
-    // Serial.println(audio);
+    Serial.print("Salud corazón: ");
+    Serial.println(folder);
+    Serial.print("Sonido: ");
+    Serial.println(audio);
 
     controlAltavoz(audio);
 
@@ -190,7 +170,7 @@ void reproducirAudio(int folder, int audio){
     else if (!pressed && isPlaying) {
       // Se soltó el botón y estaba sonando: paramos
       myDFPlayer.stop();
-      digitalWrite(enaAltavoz, LOW);
+      apagarAltavoces();
       isPlaying = false;
       Serial.println("Pause");
     }
@@ -211,23 +191,38 @@ int getLevel(int sensorValue){
   return NIVELES;
 }
 
-void actualizarPines(int valor) {
-  valor--;
-  if(valor >= 0 && valor < NIVELES){
-    digitalWrite(controlLeds0, bitRead(valor, 0)); // Bit 0 para Y0
-    digitalWrite(controlLeds1, bitRead(valor, 1)); // Bit 1 para Y1
-    digitalWrite(controlLeds2, bitRead(valor, 2)); // Bit 2 para Y2
-  }else Serial.println("Error: Led a encender no existe");
+void actualizarLeds(int valor) {
+  valor--; // Convertir de 1–6 a índice 0–5
+
+  if (valor >= 0 && valor < NIVELES) {
+    // Apagar todos los LEDs
+    for (int i = 0; i < NIVELES; i++) {
+      digitalWrite(leds[i], LOW);
+    }
+    // Encender solo el LED correspondiente
+    digitalWrite(leds[valor], HIGH);
+  } else {
+    Serial.println("Error: Led a encender no existe");
+  }
 }
 
 void controlAltavoz(int valor) {
-  valor--;
-  if(valor >= 0 && valor < N_ALTAVOCES){
-    digitalWrite(controlAltavoz0, bitRead(valor, 0)); // Bit 0 para Y0
-    digitalWrite(controlAltavoz1, bitRead(valor, 1)); // Bit 1 para Y1
-    digitalWrite(controlAltavoz2, bitRead(valor, 2)); // Bit 2 para Y2
-    digitalWrite(enaAltavoz, HIGH);
-  }else{
-    Serial.println("Error: Altavoz a encender no existe"); return;
+  valor--; // Convertir de 1–5 a índice 0–4
+
+  if (valor >= 0 && valor < N_ALTAVOCES) {
+    // Apagar todos los relés
+    for (int i = 0; i < N_ALTAVOCES; i++) {
+      digitalWrite(reles[i], LOW);
+    }
+    // Activar solo el seleccionado
+    digitalWrite(reles[valor], HIGH);
+  } else {
+    Serial.println("Error: Altavoz a encender no existe");
+  }
+}
+
+void apagarAltavoces() {
+  for (int i = 0; i < N_ALTAVOCES; i++) {
+    digitalWrite(reles[i], LOW);
   }
 }
