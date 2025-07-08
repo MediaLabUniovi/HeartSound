@@ -82,8 +82,8 @@ void setup() {
   delay(200);
   Serial.begin(115200);
   Serial2.begin(9600);     // Comunicación con el  MP3 (en TX2/RX2)
-  // Iniciar UART2 en pines 17 (RX) y 16 (TX) a 9600 baudios
 
+  // Iniciar UART2 en pines 17 (RX) y 16 (TX) a 9600 baudios
   Serial.println("Iniciando DFPlayer...");
   if (!myDFPlayer.begin(Serial2)) {
     Serial.println("No se encontró el DFPlayer Mini.");

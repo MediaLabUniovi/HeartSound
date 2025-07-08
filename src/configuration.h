@@ -1,8 +1,7 @@
 #ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
-/* PINOUT */
-// --- Definición de pines ---
+/* DEFINICIÓN DE PINES */
 
 // LEDs
 #define LED1 22
