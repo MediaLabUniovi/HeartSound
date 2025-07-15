@@ -14,7 +14,10 @@
 
 extern uint8_t peer_mac[6];
 extern String nombrePlaca;
-extern uint8_t heartType; // tipo de corazón actual (1-6)
+extern int heartType; // tipo de corazón actual (1-6)
+extern const String nombrePlacaMando;
+extern const String nombrePlacaCuerpo;
+
 //===========================================//
 //           Prototipos de funciones         //
 //===========================================//
