@@ -12,3 +12,7 @@ El código de ejemplo está hecho para mandar instrucciones por serial de la sig
 
 ## Uso
 Las funciones de ESP_NOW_functions.cpp son funciones para inicializar la comunicación ESP-NOW y gestionar el flujo de datos. Debería de importarse este archivo con su cabecera ESP_NOW_functions.h y modificar el código del main para recibir las instrucciones y los tipos de corazóin por flujo de código interno en vez de por parte del usuario via Serial.
+
+Para comunicarse será necesario simplemente utilizar por parte del corazón la función sendHeartType(unit8_t heartType) con el tipo de corazón que se quiera mandar y por parte del tórax la función de askHeartType() para pedir el tipo de corazón para actualizarlo.
+
+El resto de funciones tipo callback ya se utilizan para gestionar internamente el flujo de datos.
