@@ -1,12 +1,15 @@
 //esp_now_functions.cpp
-
+#include <WiFi.h>
+#include <esp_now.h>
 #include "esp_now_functions.h"
+
 
 static const char* TAG = "ESP_NOW";
 
 //===========================================//
 //               Configuración               //
 //===========================================//
+
 
 uint8_t* stringToMac(String macStr) { // Pasa de la mac en formato string a uno reconocible por ESP-NOW
   static uint8_t macBytes[6];  // static para que no se destruya al salir de la función
@@ -50,6 +53,9 @@ void seleccion_placa(String& nombrePlaca){
 }
 
 void espNOW_setup(){ // Inicializa el ESP-NOW y registra los peers y los callbacks 
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  
   // Inicializar ESP-NOW
   WiFi.mode(WIFI_STA);        // <-- ¡IMPRESCINDIBLE! (Si no se hace salta el GURU)
   WiFi.disconnect(); 
@@ -58,7 +64,9 @@ void espNOW_setup(){ // Inicializa el ESP-NOW y registra los peers y los callbac
     Serial.println("Error al inicializar ESP-NOW");
     return;
   }
+  
   seleccion_placa(nombrePlaca);
+  
   // Registrar las funciones de callback
   if (nombrePlaca == nombrePlacaMando){
     esp_now_register_recv_cb(corRecvCallback);
