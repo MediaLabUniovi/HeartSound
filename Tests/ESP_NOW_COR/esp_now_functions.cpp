@@ -10,11 +10,56 @@ static const char* TAG = "ESP_NOW";
 //               Configuración               //
 //===========================================//
 
+
+uint8_t* stringToMac(String macStr) { // Pasa de la mac en formato string a uno reconocible por ESP-NOW
+  static uint8_t macBytes[6];  // static para que no se destruya al salir de la función
+  int macIndex = 0;
+  for (int i = 0; i < macStr.length(); i += 3) {
+    String byteStr = macStr.substring(i, i + 2);
+    macBytes[macIndex++] = (uint8_t) strtol(byteStr.c_str(), NULL, 16);
+  }
+  return macBytes;
+}
+
+
+void seleccion_placa(String& nombrePlaca){
+  delay(100);
+
+  // lee directamente la MAC en bytes:
+  uint8_t actualMAC[6];
+  WiFi.macAddress(actualMAC);
+
+  Serial.printf("MAC leída: %02X:%02X:%02X:%02X:%02X:%02X\n",
+                actualMAC[0], actualMAC[1], actualMAC[2],
+                actualMAC[3], actualMAC[4], actualMAC[5]);
+
+  // compara con tus MAC hardcodeadas
+  static uint8_t mac1[] = {0x3C, 0x8A, 0x1F, 0x99, 0xFB, 0xF0}; // Corazón
+  static uint8_t mac2[] = {0x3C, 0x8A, 0x1F, 0x99, 0x4C, 0xC0}; // Tórax
+  static const uint8_t mac_null[6] = {0};
+
+  if (memcmp(actualMAC, mac1, 6)==0) {
+    nombrePlaca = nombrePlacaMando;
+    memcpy(peer_mac, mac2, 6);
+  } else if (memcmp(actualMAC, mac2, 6)==0) {
+    nombrePlaca = nombrePlacaCuerpo;
+    memcpy(peer_mac, mac1, 6);
+  } else {
+    nombrePlaca = "Desconocido";
+    memcpy(peer_mac, mac_null,6);
+  }
+
+  Serial.println("Parte del cuerpo: "+nombrePlaca);
+}
+
 void espNOW_setup(){ // Inicializa el ESP-NOW y registra los peers y los callbacks 
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
   
   // Inicializar ESP-NOW
+  WiFi.mode(WIFI_STA);        // <-- ¡IMPRESCINDIBLE! (Si no se hace salta el GURU)
+  WiFi.disconnect(); 
+
   if (esp_now_init() != ESP_OK) {
     Serial.println("Error al inicializar ESP-NOW");
     return;
@@ -23,9 +68,9 @@ void espNOW_setup(){ // Inicializa el ESP-NOW y registra los peers y los callbac
   seleccion_placa(nombrePlaca);
   
   // Registrar las funciones de callback
-  if (nombrePlaca == "Corazón"){
+  if (nombrePlaca == nombrePlacaMando){
     esp_now_register_recv_cb(corRecvCallback);
-  } else if (nombrePlaca == "Tórax"){
+  } else if (nombrePlaca == nombrePlacaCuerpo){
     esp_now_register_recv_cb(torRecvCallback);
   } else {
     Serial.println("Placa no reconocida, revisa la MAC introducida");
@@ -50,41 +95,6 @@ void espNOW_setup(){ // Inicializa el ESP-NOW y registra los peers y los callbac
   Serial.printf("%02X:%02X:%02X:%02X:%02X:%02X\n",
                peer_mac[0], peer_mac[1], peer_mac[2],
                peer_mac[3], peer_mac[4], peer_mac[5]);
-}
-
-uint8_t* stringToMac(String macStr) { // Pasa de la mac en formato string a uno reconocible por ESP-NOW
-  static uint8_t macBytes[6];  // static para que no se destruya al salir de la función
-  int macIndex = 0;
-  for (int i = 0; i < macStr.length(); i += 3) {
-    String byteStr = macStr.substring(i, i + 2);
-    macBytes[macIndex++] = (uint8_t) strtol(byteStr.c_str(), NULL, 16);
-  }
-  return macBytes;
-}
-
-void seleccion_placa(String& nombrePlaca){
-  delay(100);
-  // TODO: Cambiar MACs
-  static uint8_t mac1[] = {0x3C, 0x8A, 0x1F, 0x9A, 0x0C, 0x20}; // Corazón
-  static uint8_t mac2[] = {0xF0, 0x24, 0xF9, 0x43, 0x4A, 0xB8}; // Tórax
-  static uint8_t mac_null[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-  uint8_t* macAddress = stringToMac(WiFi.macAddress());
-  Serial.printf("MAC leída: %02X:%02X:%02X:%02X:%02X:%02X\n",
-               macAddress[0], macAddress[1], macAddress[2],
-               macAddress[3], macAddress[4], macAddress[5]);
-  if (memcmp(macAddress, mac1, 6) == 0) {
-    nombrePlaca = "Corazón";
-    memcpy(peer_mac, mac2, 6);
-  } else if (memcmp(macAddress, mac2, 6) == 0) {
-    nombrePlaca = "Tórax";
-    memcpy(peer_mac, mac1, 6);
-  } else {
-    nombrePlaca = "Desconocido";
-    memcpy(peer_mac, mac_null, 6);
-  }
-  Serial.print("Parte del cuerpo: ");
-  Serial.println(nombrePlaca);
-
 }
 
 //===========================================//
@@ -134,12 +144,12 @@ void torRecvCallback(const esp_now_recv_info_t * info, const uint8_t * data, int
     uint8_t receivedHeartType = *data;
     if (receivedHeartType >= 1 && receivedHeartType <= 6) {
       heartType = receivedHeartType;
-      Serial.printf("Tipo de corazón recibido: %u", heartType);
+      Serial.printf("Tipo de corazón recibido: %u\n", heartType);
     } else {
-      Serial.printf("Tipo de corazón recibido fuera de rango (1-6): %u", receivedHeartType);
+      Serial.printf("Tipo de corazón recibido fuera de rango (1-6): %u\n", receivedHeartType);
     }
   } else {
-    Serial.printf("Tipo de dato inválido recibido (len=%d)", data_len);
+    Serial.printf("Tipo de dato inválido recibido (len=%d)\n", data_len);
   }
 }
 
