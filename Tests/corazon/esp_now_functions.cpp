@@ -65,7 +65,7 @@ uint8_t* stringToMac(String macStr) { // Pasa de la mac en formato string a uno 
 void seleccion_placa(String& nombrePlaca){
   delay(100);
   // TODO: Cambiar MACs
-  static uint8_t mac1[] = {0x3C, 0x8A, 0x1F, 0x9A, 0x0C, 0x20}; // Corazón
+  static uint8_t mac1[] = {0x14, 0x2B, 0x2F, 0xDB, 0x05, 0xF0}; // Corazón
   static uint8_t mac2[] = {0xF0, 0x24, 0xF9, 0x43, 0x4A, 0xB8}; // Tórax
   static uint8_t mac_null[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
   uint8_t* macAddress = stringToMac(WiFi.macAddress());

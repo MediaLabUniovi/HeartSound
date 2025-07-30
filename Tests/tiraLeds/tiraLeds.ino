@@ -13,7 +13,7 @@ void setup() {
 
 void loop() {
   for (int i = 0; i < NUMPIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(0, 150, 0)); // verde
+    pixels.setPixelColor(i, pixels.Color(50, 0, 0)); // verde
     pixels.show();   
     delay(300);      
   }

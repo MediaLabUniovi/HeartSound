@@ -1,10 +1,18 @@
+#include <Arduino.h>
+#include <Adafruit_NeoPixel.h>
 #include "esp_now_functions.h"
 
 #define sensorPin 34   // Pin de lectura del potenciómetro
 #define resolucion 1024
 #define niveles 6
 
-const int leds[6] = {14, 27, 26, 25, 33, 32};  
+//Tira leds
+#define LED        23       
+#define NUMPIXELS   6
+
+
+Adafruit_NeoPixel pixels(NUMPIXELS, LED, NEO_GRB + NEO_KHZ800);
+
 
 int sensorValue = 0;  // valor del sensor
 int lastNivel = 0;  // valor del sensor
@@ -28,10 +36,10 @@ void setup() {
 
   // Configuración de pines de salida
   for (int i = 0; i < niveles; i++) {
-    pinMode(leds[i], OUTPUT);
-    digitalWrite(leds[i], LOW);  // Apagar todos los LEDs al inicio
+    pinMode(LED, OUTPUT);
+    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
   }
-
+  pixels.show();
   Serial.println("Listo: potenciómetro + LEDs configurados.");
 }
 
@@ -61,9 +69,10 @@ int getLevel(int sensorValue){
 void mostrarNivel(int nivel) {
   for (int i = 0; i < niveles; i++) {
     if (i == nivel - 1) {
-      digitalWrite(leds[i], HIGH);
+      pixels.setPixelColor(i, pixels.Color(50, 0, 0)); // verde
     } else {
-      digitalWrite(leds[i], LOW);
+      pixels.setPixelColor(i, pixels.Color(0, 0, 0));
     }
   }
+  pixels.show();
 }

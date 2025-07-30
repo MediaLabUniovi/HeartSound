@@ -5,7 +5,7 @@
 
 uint8_t peer_mac[6];
 String nombrePlaca;
-uint8_t heartType; // tipo de corazón actual (1-6)
+uint8_t heartType = 1; // tipo de corazón (1-6)
 
 HardwareSerial SerialDFP(2);  // UART1
 DFRobotDFPlayerMini myDFPlayer;
@@ -15,7 +15,7 @@ int sensorValue = 0;  // valor del sensor
 int nivel;
 
 // Variables de interrupción
-volatile int var = 0; // Lado del cuerpo 1-5
+volatile int var = 1; // Lado del cuerpo 1-5
 volatile bool cambio = false;
 
 // Variables de control
@@ -124,7 +124,7 @@ void setup() {
     return;
   }
   Serial.println("DFPlayer iniciado correctamente.");
-  myDFPlayer.volume(30);  // Volumen (0-30)
+  myDFPlayer.volume(20);  // Volumen (0-30)
   myDFPlayer.EQ(DFPLAYER_EQ_NORMAL);
   myDFPlayer.outputDevice(DFPLAYER_DEVICE_SD);  // Fuente: tarjeta SD
 
@@ -169,7 +169,7 @@ void reproducirAudio(int folder, int audio){
   }
   if (isPlaying){ // El 11 es el fin de canción, cuando llega se vuelve a poner si está el botón pulsado
     if (myDFPlayer.available() && myDFPlayer.readType() == 11) {
-      myDFPlayer.playFolder(folder,var);
+      myDFPlayer.playFolder(folder,audio);
     }
   }
 }

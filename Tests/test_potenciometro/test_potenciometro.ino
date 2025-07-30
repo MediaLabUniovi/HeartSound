@@ -1,4 +1,4 @@
-int sensorPin = A5;   // Pin de lectura del potenciómetro
+int sensorPin = 34;   // Pin de lectura del potenciómetro
 int sensorValue = 0;  // valor del sensor
 int resolucion = 1024;
 int niveles = 6;
@@ -8,6 +8,8 @@ int getLevel(int sensorValue);
 
 void setup() {
   Serial.begin(9600);
+  analogReadResolution(10);         // 10 bits (0-1023)
+  analogSetPinAttenuation(sensorPin, ADC_11db);
 }
 
 void loop() {
