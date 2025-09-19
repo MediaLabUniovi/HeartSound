@@ -37,6 +37,14 @@ The system combines **3D printing, electronics, and ESP32 programming**, allowin
 
 ---
 
+## Schematics
+
+<img width="1527" height="1079" alt="image" src="https://github.com/user-attachments/assets/c6579502-7597-46c8-8a32-b9c7d966c85e" />
+
+<img width="1526" height="1072" alt="image" src="https://github.com/user-attachments/assets/8ace285f-435e-4f7d-9b68-13b5cc935aef" />
+
+---
+
 ## How It Works
 
 1. Press a **speaker button** → the system activates the corresponding relay.
