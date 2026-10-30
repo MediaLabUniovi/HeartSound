@@ -10,7 +10,6 @@
 #define LED        23       
 #define NUMPIXELS   6
 
-
 Adafruit_NeoPixel pixels(NUMPIXELS, LED, NEO_GRB + NEO_KHZ800);
 
 

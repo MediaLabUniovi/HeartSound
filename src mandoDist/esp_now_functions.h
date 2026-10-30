@@ -32,6 +32,6 @@ void askForHeartType();
 void torRecvCallback(const esp_now_recv_info_t * info, const uint8_t * data, int data_len);
 
 // --------- Callbacks ESP-NOW --------
-void sentCallback(const uint8_t *mac_addr, esp_now_send_status_t status);
+void sentCallback(const esp_now_send_info_t *mac_addr, esp_now_send_status_t status);
 
 #endif

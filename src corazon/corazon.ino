@@ -3,21 +3,18 @@
 #include "configuration.h"
 #include "esp_now_functions.h"
 
+
 uint8_t peer_mac[6];
 String nombrePlaca;
-uint8_t heartType = 1; // tipo de corazón (1-6)
+uint8_t heartType = CORAZON_1; // tipo de corazón (1-6)
 
 HardwareSerial SerialDFP(2);  // UART1
 DFRobotDFPlayerMini myDFPlayer;
 
-/* VARIABLES */
-int sensorValue = 0;  // valor del sensor
-int nivel;
-
+// --------------------- VARIABLES --------------------
 // Variables de interrupción
-volatile int var = 1; // Lado del cuerpo 1-5
-volatile bool cambio = false;
-
+volatile heartPosition_t heartPosition = FOCO_AORTICO;   // Posición del altavoz (Consultar Documentación)
+volatile bool changeFlag = false;
 // Variables de control
 bool isPlaying = false;
 unsigned long currentMillis = millis();
@@ -28,50 +25,50 @@ volatile unsigned long lastInterruptTime3 = 0;
 volatile unsigned long lastInterruptTime4 = 0;
 volatile unsigned long lastInterruptTime5 = 0;
 
-const unsigned long debounceDelay = 100; // 50 ms debounce
+const unsigned long debounceDelay_MS = 100; // 100 ms debounce
 
 //Rutinas de atención a la interrupción
 void isrPulsador1() {
   unsigned long interruptTime = millis();
-  if (interruptTime - lastInterruptTime1 > debounceDelay) {
-    var = 1;
-    cambio = true;
+  if (interruptTime - lastInterruptTime1 > debounceDelay_MS) {
+    heartPosition = FOCO_AORTICO;
+    changeFlag = true;
     lastInterruptTime1 = interruptTime;
   }
 }
 
 void isrPulsador2() {
   unsigned long interruptTime = millis();
-  if (interruptTime - lastInterruptTime2 > debounceDelay) {
-    var = 2;
-    cambio = true;
+  if (interruptTime - lastInterruptTime2 > debounceDelay_MS) {
+    heartPosition = FOCO_PULMONAR;
+    changeFlag = true;
     lastInterruptTime2 = interruptTime;
   }
 }
 
 void isrPulsador3() {
   unsigned long interruptTime = millis();
-  if (interruptTime - lastInterruptTime3 > debounceDelay) {
-    var = 3;
-    cambio = true;
+  if (interruptTime - lastInterruptTime3 > debounceDelay_MS) {
+    heartPosition = FOCO_ACCESORIO_AORTICO;
+    changeFlag = true;
     lastInterruptTime3 = interruptTime;
   }
 }
 
 void isrPulsador4() {
   unsigned long interruptTime = millis();
-  if (interruptTime - lastInterruptTime4 > debounceDelay) {
-    var = 4;
-    cambio = true;
+  if (interruptTime - lastInterruptTime4 > debounceDelay_MS) {
+    heartPosition = FOCO_TRICUSPIDE;
+    changeFlag = true;
     lastInterruptTime4 = interruptTime;
   }
 }
 
 void isrPulsador5() {
   unsigned long interruptTime = millis();
-  if (interruptTime - lastInterruptTime5 > debounceDelay) {
-    var = 5;
-    cambio = true;
+  if (interruptTime - lastInterruptTime5 > debounceDelay_MS) {
+    heartPosition = FOCO_MITRAL;
+    changeFlag = true;
     lastInterruptTime5 = interruptTime;
   }
 }
@@ -84,25 +81,21 @@ void apagarAltavoces(void);
 
 void setup() {
   Serial.begin(115200);
-
-  espNOW_setup();
-  
+  espNOW_setup(); 
   // Configurar relés como salidas
-  pinMode(RELE1, OUTPUT);
-  pinMode(RELE2, OUTPUT);
-  pinMode(RELE3, OUTPUT);
-  pinMode(RELE4, OUTPUT);
-  pinMode(RELE5, OUTPUT);
+  pinMode(PIN_RELE1, OUTPUT);
+  pinMode(PIN_RELE2, OUTPUT);
+  pinMode(PIN_RELE3, OUTPUT);
+  pinMode(PIN_RELE4, OUTPUT);
+  pinMode(PIN_RELE5, OUTPUT);
 
   apagarAltavoces();
-
   // Configurar pulsadores como entrada con pull-up
   pinMode(PULSADOR1, INPUT_PULLUP);
   pinMode(PULSADOR2, INPUT_PULLUP);
   pinMode(PULSADOR3, INPUT_PULLUP);
   pinMode(PULSADOR4, INPUT_PULLUP);
   pinMode(PULSADOR5, INPUT_PULLUP);
-
   // Configurar interrupciones por flanco de bajada
   attachInterrupt(digitalPinToInterrupt(PULSADOR1), isrPulsador1, CHANGE);
   attachInterrupt(digitalPinToInterrupt(PULSADOR2), isrPulsador2, CHANGE);
@@ -110,9 +103,7 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(PULSADOR4), isrPulsador4, CHANGE);
   attachInterrupt(digitalPinToInterrupt(PULSADOR5), isrPulsador5, CHANGE);
 
-  /* 
-    * Configuración del Reproductor mp3
-  */
+//------------------- Configuración del Reproductor mp3 ------------------
   // Iniciar UART1 en pines (RX) y (TX) a 9600 baudios
   SerialDFP.begin(9600, SERIAL_8N1, RX, TX);
   delay(1000);
@@ -131,17 +122,34 @@ void setup() {
 }
 
 void loop() {
-  reproducirAudio(heartType, var);
+  reproducirAudio(heartType, heartPosition);
   delay(100);
 }
-
 
 /* FUNCIONES */
 
 void reproducirAudio(int folder, int audio){
-  if (cambio) {
-    cambio = false;
-    int pin = (audio==1 ? PULSADOR1 : audio==2 ? PULSADOR2: audio==3 ? PULSADOR3: audio==4 ? PULSADOR4 : PULSADOR5);
+  if (changeFlag) {
+    changeFlag = false;
+    //int pin = (audio==1 ? PULSADOR1 : audio==2 ? PULSADOR2: audio==3 ? PULSADOR3: audio==4 ? PULSADOR4 : PULSADOR5);
+    int pin;
+    switch(audio){
+      case 1:
+        pin = PULSADOR1;
+        break;
+      case 2:
+        pin = PULSADOR2;
+        break;
+      case 3:
+        pin = PULSADOR3;
+        break;
+      case 4:
+        pin = PULSADOR4;
+        break;
+      default:
+        pin = PULSADOR5;
+        break;
+    }
 
     //mensajes debug
     Serial.print("Salud corazón: ");
@@ -168,7 +176,7 @@ void reproducirAudio(int folder, int audio){
     }
   }
   if (isPlaying){ // El 11 es el fin de canción, cuando llega se vuelve a poner si está el botón pulsado
-    if (myDFPlayer.available() && myDFPlayer.readType() == 11) {
+    if (myDFPlayer.available() && myDFPlayer.readType() == DFPlayerFeedBack) {
       myDFPlayer.playFolder(folder,audio);
     }
   }

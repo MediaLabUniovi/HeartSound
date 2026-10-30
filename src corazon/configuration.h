@@ -11,12 +11,11 @@
 #define PULSADOR5 21
 
 // Relés (control de altavoces)
-#define RELE1 32
-#define RELE2 33
-#define RELE3 13
-#define RELE4 14
-#define RELE5 22
-
+#define PIN_RELE1 32
+#define PIN_RELE2 33
+#define PIN_RELE3 13
+#define PIN_RELE4 14
+#define PIN_RELE5 22
 // Pines UART (DFPlayer)
 #define TX 17  // TX del ESP32 → RX del DFPlayer
 #define RX 16  // RX del ESP32 ← TX del DFPlayer
@@ -27,6 +26,24 @@
 #define N_ALTAVOCES   5
 
 // Arrays de ejemplo
-const int reles[N_ALTAVOCES] = {RELE1, RELE2, RELE3, RELE4, RELE5};
+const int reles[N_ALTAVOCES] = {PIN_RELE1, PIN_RELE2, PIN_RELE3, PIN_RELE4, PIN_RELE5};
+
+// Enumeraciones corazones
+typedef enum {
+  CORAZON_1 = 1,
+  CORAZON_2 = 2,
+  CORAZON_3 = 3,
+  CORAZON_4 = 4,
+  CORAZON_5 = 5,
+  CORAZON_6 = 6,
+} heartType_t;
+
+typedef enum  {
+  FOCO_AORTICO = 1,
+  FOCO_PULMONAR = 2,
+  FOCO_ACCESORIO_AORTICO = 3,
+  FOCO_TRICUSPIDE = 4,
+  FOCO_MITRAL = 5,
+} heartPosition_t;
 
 #endif
